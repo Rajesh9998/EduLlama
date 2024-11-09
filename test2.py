@@ -15,7 +15,7 @@ client = Together(api_key=os.environ["TOGETHER_API_KEY"])
 reference_models = [
     "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
     "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-    #"meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+    "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
     "gpt-4o-mini",
     "claude-3-haiku"
 ]

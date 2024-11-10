@@ -1,0 +1,5 @@
+google-generativeai
+together
+open-interpreter
+groq
+elevenlabs

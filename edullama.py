@@ -9,7 +9,7 @@ import google.generativeai as genai
 from groq import Groq
 from elevenlabs.client import ElevenLabs
 from together import Together
-import interpreter
+from interpreter import interpreter
 
 # Initialize secrets
 TOGETHER_API_KEY = st.secrets["TOGETHER_API_KEY"]

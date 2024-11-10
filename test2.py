@@ -14,6 +14,7 @@ from test3 import transcribe_audio
 from groq import Groq
 from tts_utils import stream_audio_response, initialize_session_state
 import elevenlabs
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -173,8 +174,30 @@ def process_voice_input(audio):
         st.error(f"Error processing voice input: {str(e)}")
 
 def main():
-    st.title("🧮 Interactive Math Problem Solver")
+    custom_css = """
+    <style>
+    #the-title {
+    text-align: center;
+    font-family: 'Arial', sans-serif;  /* Similar font family */
+    font-size: 36px;                   /* Main Title Size */
+    font-weight: bold;                  /* Optional: Make it bold */
+    }
 
+    #the-tagline {
+    text-align: center;
+    font-family: 'Arial', sans-serif;  /* Same font family */
+    font-size: 24px;                   /* Tagline Size */
+    color: #555;                        /* Optional: Change color of the tagline */
+   }
+   </style>
+   """
+
+    # Inject the CSS into the Streamlit app
+    st.markdown(custom_css, unsafe_allow_html=True)
+
+    # Display the title and tagline with specific IDs
+    st.markdown('<h1 id="the-title">🧮 EduLlama</h1>', unsafe_allow_html=True)
+    st.markdown('<h2 id="the-tagline">Learn Math Smarter, Not Harder!</h2>', unsafe_allow_html=True)
     # Initialize session state
     initialize_session_state()
 

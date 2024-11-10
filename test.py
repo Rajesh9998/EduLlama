@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from duckduckgo_search import DDGS
 from interpreter import interpreter
+import base64
 import google.generativeai as genai
 
 load_dotenv()
@@ -21,6 +22,12 @@ reference_models = [
     
 ]
 
+def image_to_data_url(image_path):
+    """Convert image to base64 data URL."""
+    with open(image_path, "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+        return f"data:image/jpeg;base64,{encoded_image}"
+
 def extract_question_from_image(image_path):
     """Extract question and options from image using Gemini."""
     generation_config = {
@@ -30,15 +37,30 @@ def extract_question_from_image(image_path):
         "max_output_tokens": 8192,
         "response_mime_type": "text/plain",
     }
-    
+
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash-002",
         generation_config=generation_config,
     )
-    
+
+    # Upload file to Gemini
     file = genai.upload_file(image_path)
-    chat = model.start_chat()
-    response = chat.send_message([file, "extract the question and options as it is from the image. Note: Don't return any text other than the Question and options."])
+
+    # Start chat session with image
+    chat_session = model.start_chat(
+        history=[
+            {
+                "role": "user",
+                "parts": [file],
+            },
+        ]
+    )
+
+    # Send prompt to extract question
+    response = chat_session.send_message(
+        "extract the question and options as it is from the image. Note: Don't return any text (not even other single word)other than the Question and options. Make sure You extract the question as it is in the Image , Do not make Mistakes"
+    )
+
     return response.text
 
 def create_system_prompt(user_prompt):

@@ -9,7 +9,7 @@
 
 EduLlama is an interactive, AI-powered math tutor designed to help students master complex mathematical problems, particularly at the JEE level. By combining multiple Large Language Models and advanced AI technologies, EduLlama provides step-by-step solutions and interactive voice assistance for a personalized learning experience.
 
-![EduLlama Demo](demo_screenshot.png)
+![](Examples/Screenshot%202024-11-11%20024742.png)
 
 ## Features
 

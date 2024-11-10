@@ -13,7 +13,10 @@ from interpreter import interpreter
 from duckduckgo_search import DDGS
 # Initialize secrets
 
-
+TOGETHER_API_KEY = st.secrets["TOGETHER_API_KEY"]
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+ELEVENLABS_API_KEY = st.secrets["ELEVENLABS_API_KEY"]
 # Initialize clients
 together_client = Together(api_key=TOGETHER_API_KEY)
 genai.configure(api_key=GEMINI_API_KEY)

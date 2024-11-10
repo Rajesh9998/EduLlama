@@ -7,12 +7,15 @@ from test import solve_math_problem, extract_question_from_image, run_together_l
 from test3 import transcribe_audio
 from streamlit_mic_recorder import mic_recorder
 from groq import Groq
+from tts_utils import generate_audio_response
+import elevenlabs
 
 load_dotenv()
 
 # Initialize Groq client
 client = Groq()
-
+# Initialize ElevenLabs
+elevenlabs.ElevenLabs(api_key= os.getenv('ELEVENLABS_API_KEY'))
 # Initialize session state
 if 'conversation' not in st.session_state:
     st.session_state.conversation = []
@@ -22,6 +25,8 @@ if 'solution_json' not in st.session_state:
     st.session_state.solution_json = ""
 if 'step_by_step_solution' not in st.session_state:
     st.session_state.step_by_step_solution = ""
+if 'audio_counter' not in st.session_state:
+    st.session_state.audio_counter = 0
 
 def main():
     st.title("Math Problem Solver")
@@ -123,6 +128,25 @@ def main():
                             {"role": "assistant", "content": assistant_response}
                         )
 
+                        # Generate audio response
+                        audio_response = generate_audio_response(assistant_response)
+                        if audio_response:
+                            st.session_state.audio_counter += 1
+                            st.audio(audio_response, format='audio/mp3')
+                            # Add autoplay script
+                            st.markdown(
+                                f"""
+                                <script>
+                                    const audioElements = document.querySelectorAll('audio');
+                                    const lastAudio = audioElements[audioElements.length - 1];
+                                    if (lastAudio) {{
+                                        lastAudio.play();
+                                    }}
+                                </script>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
                     except Exception as e:
                         st.error(f"An error occurred: {str(e)}")
 
@@ -130,9 +154,6 @@ def main():
         with conversation_container:
             for message in st.session_state.conversation:
                 st.markdown(f"**{message['role'].title()}:** {message['content']}")
-
-    # Remove or comment out st.experimental_rerun()
-    # st.experimental_rerun()
 
 if __name__ == "__main__":
     main()

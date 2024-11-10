@@ -9,14 +9,10 @@ load_dotenv()
 # Set page title
 st.title("Audio Transcription with Groq")
 
-# Initialize Groq client - make sure to set your GROQ_API_KEY environment variable
-client = Groq(
-    api_key=os.getenv('GROQ_API_KEY')
-)
-
 def transcribe_audio(audio_bytes, filename):
     """Function to handle Groq transcription"""
     try:
+        client = Groq(api_key=os.getenv('GROQ_API_KEY'))
         transcription = client.audio.transcriptions.create(
             file=(filename, audio_bytes),
             model="whisper-large-v3-turbo",
@@ -78,16 +74,3 @@ if audio:
             if 'tmp_file' in locals():
                 os.unlink(tmp_file.name)
 
-# Add instructions
-st.markdown("""
-### Instructions:
-1. Click the '🎤 Start Recording' button to begin
-2. Speak clearly into your microphone
-3. Click '⏹️ Stop Recording' when finished
-4. Wait for Groq to process and transcribe your audio
-5. View your transcription below the audio player
-
-Note: Make sure you have:
-- Allowed microphone access in your browser
-- Set up your GROQ_API_KEY environment variable
-""")

@@ -12,25 +12,24 @@ load_dotenv()
 
 # Initialize Groq client
 client = Groq()
-genai_api_key = os.environ.get("GEMINI_API_KEY")
+
+# Initialize session state
+if 'conversation' not in st.session_state:
+    st.session_state.conversation = []
+if 'question' not in st.session_state:
+    st.session_state.question = ""
+if 'solution_json' not in st.session_state:
+    st.session_state.solution_json = ""
+if 'step_by_step_solution' not in st.session_state:
+    st.session_state.step_by_step_solution = ""
 
 def main():
     st.title("Math Problem Solver")
 
-    # Initialize session state for conversation and problem data
-    if 'conversation' not in st.session_state:
-        st.session_state.conversation = []
-    if 'question' not in st.session_state:
-        st.session_state.question = ""
-    if 'solution_json' not in st.session_state:
-        st.session_state.solution_json = ""
-    if 'step_by_step_solution' not in st.session_state:
-        st.session_state.step_by_step_solution = ""
-
-    # Create two columns
+    # Create two columns (Problem Input on left, Voice Interaction on right)
     col1, col2 = st.columns(2)
 
-    with col2:
+    with col1:
         st.subheader("Problem Input")
         # Create tabs for Image and Text
         tab1, tab2 = st.tabs(["📸 Image Input", "✍️ Text Input"])
@@ -39,32 +38,23 @@ def main():
             uploaded_file = st.file_uploader("Upload an image", type=['png', 'jpg', 'jpeg'])
             if uploaded_file:
                 image = Image.open(uploaded_file)
-                st.image(image, caption="Uploaded Image", use_column_width=True)
+                st.image(image, use_container_width=True)
                 if st.button("Solve Problem from Image"):
                     with st.spinner("Processing image and solving problem..."):
                         temp_path = "temp_image.jpg"
                         with open(temp_path, "wb") as f:
                             f.write(uploaded_file.getbuffer())
                         try:
-                            # Extract question from image
                             question_text = extract_question_from_image(temp_path)
                             st.write("**Extracted Question:**")
                             st.write(question_text)
 
-                            # Solve the extracted problem
                             solution_json = solve_math_problem(question_text)
-
-                            # Generate step-by-step solution using together model
                             step_by_step_solution = run_together_llm(
                                 "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
                                 f"Please provide a step-by-step solution in markdown format for the following problem:\n{question_text}\nSolution JSON:\n{solution_json}"
                             )
 
-                            # Display the solution
-                            st.markdown("### Step-by-Step Solution:")
-                            st.markdown(step_by_step_solution)
-
-                            # Save data in session state
                             st.session_state.question = question_text
                             st.session_state.solution_json = solution_json
                             st.session_state.step_by_step_solution = step_by_step_solution
@@ -73,79 +63,76 @@ def main():
                                 os.remove(temp_path)
 
         with tab2:
-            st.subheader("Enter Math Problem")
             user_text = st.text_area("Enter your math problem here", height=200)
             if st.button("Solve Problem"):
                 with st.spinner("Solving problem..."):
                     question_text = user_text
                     solution_json = solve_math_problem(user_text)
-
-                    # Generate step-by-step solution using together model
                     step_by_step_solution = run_together_llm(
                         "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
                         f"Please provide a step-by-step solution in markdown format for the following problem:\n{question_text}\nSolution JSON:\n{solution_json}"
                     )
 
-                    # Display the solution
-                    st.markdown("### Step-by-Step Solution:")
-                    st.markdown(step_by_step_solution)
-
-                    # Save data in session state
                     st.session_state.question = question_text
                     st.session_state.solution_json = solution_json
                     st.session_state.step_by_step_solution = step_by_step_solution
 
-    with col1:
+        # Display the step-by-step solution if available
+        if st.session_state.step_by_step_solution:
+            st.markdown("### Step-by-Step Solution:")
+            st.markdown(st.session_state.step_by_step_solution)
+
+    with col2:
         st.subheader("Voice Interaction")
-        # Voice recording
-        audio = mic_recorder(
-            start_prompt="🎤 Start Speaking",
-            stop_prompt="⏹️ Stop Speaking",
-            just_once=False,
-            key="voice_recorder"
-        )
-        if audio:
-            with st.spinner("Processing audio..."):
-                try:
-                    # Transcribe audio
-                    transcribed_query = transcribe_audio(audio['bytes'], "audio.wav")
+        # Conversation container to display messages
+        conversation_container = st.container()
 
-                    # Display user's query
-                    st.markdown(f"**User:** {transcribed_query}")
+        # Voice recording container at the bottom
+        with st.container():
+            audio = mic_recorder(
+                start_prompt="🎤 Start Speaking",
+                stop_prompt="⏹️ Stop Speaking",
+                just_once=True,
+                key="voice_recorder"
+            )
 
-                    # Append to conversation history
-                    st.session_state.conversation.append(
-                        {"role": "user", "content": transcribed_query}
-                    )
+            if audio:
+                with st.spinner("Processing audio..."):
+                    try:
+                        transcribed_query = transcribe_audio(audio['bytes'], "audio.wav")
+                        st.session_state.conversation.append(
+                            {"role": "user", "content": transcribed_query}
+                        )
 
-                    # Prepare messages for Groq AI
-                    messages = st.session_state.conversation.copy()
-                    # Add context to the beginning
-                    context = f"The original math problem is:\n{st.session_state.question}\n\nThe step-by-step solution is:\n{st.session_state.step_by_step_solution}\n"
-                    messages.insert(0, {"role": "system", "content": context})
+                        messages = st.session_state.conversation.copy()
+                        context = f"The original math problem is:\n{st.session_state.question}\n\nThe step-by-step solution is:\n{st.session_state.step_by_step_solution}\n"
+                        messages.insert(0, {"role": "system", "content": context})
 
-                    # Generate assistant's response using Groq AI
-                    completion = client.chat.completions.create(
-                        model="llama-3.2-90b-text-preview",
-                        messages=messages,
-                        temperature=1,
-                        max_tokens=1024,
-                        top_p=1,
-                        stream=False,
-                        stop=None,
-                    )
-                    assistant_response = completion.choices[0].message.content
+                        completion = client.chat.completions.create(
+                            model="llama-3.2-90b-text-preview",
+                            messages=messages,
+                            temperature=1,
+                            max_tokens=1024,
+                            top_p=1,
+                            stream=False,
+                            stop=None,
+                        )
+                        assistant_response = completion.choices[0].message.content
 
-                    # Display assistant's response
-                    st.markdown(f"**Assistant:** {assistant_response}")
+                        st.session_state.conversation.append(
+                            {"role": "assistant", "content": assistant_response}
+                        )
 
-                    # Append assistant's response to conversation
-                    st.session_state.conversation.append(
-                        {"role": "assistant", "content": assistant_response}
-                    )
+                    except Exception as e:
+                        st.error(f"An error occurred: {str(e)}")
 
-                except Exception as e:
-                    st.error(f"An error occurred: {str(e)}")
+        # Display conversation history after processing
+        with conversation_container:
+            for message in st.session_state.conversation:
+                st.markdown(f"**{message['role'].title()}:** {message['content']}")
+
+    # Remove or comment out st.experimental_rerun()
+    # st.experimental_rerun()
 
 if __name__ == "__main__":
     main()

@@ -10,12 +10,12 @@ from groq import Groq
 from elevenlabs.client import ElevenLabs
 from together import Together
 from interpreter import interpreter
-
+from duckduckgo_search import DDGS
 # Initialize secrets
-TOGETHER_API_KEY = st.secrets["TOGETHER_API_KEY"]
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-ELEVENLABS_API_KEY = st.secrets["ELEVENLABS_API_KEY"]
+GEMINI_API_KEY="AIzaSyDuBpVke-K1NyXuIDAYyeIIOZYigDSVAII"
+TOGETHER_API_KEY="f66525844e3853f09340c802d0711a63cd84099533e0aec8212cdb25fd186078"
+GROQ_API_KEY="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"
+ELEVENLABS_API_KEY="sk_ccb1146dbd0c6bde5ca6095a2a972384cf05c23689c9fb18"
 
 # Initialize clients
 together_client = Together(api_key=TOGETHER_API_KEY)
@@ -135,7 +135,6 @@ def solve_math_problem(user_prompt):
         for model in reference_models:
             if model.startswith("meta-llama"):
                 future = executor.submit(run_together_llm, model, breakdown_prompt)
-            
             else:
                 raise ValueError(f"Unknown model type: {model}")
             future_to_model[future] = model
@@ -160,15 +159,22 @@ def solve_math_problem(user_prompt):
     Your goal is to combine these strategies into a single, well-structured explanation that focuses on how to break down the problem and the process one would follow to solve it, without actually solving or providing final answers.
     """
     
-    ddgs = DDGS()
-    aggregated_strategy = ddgs.chat(user_prompt + "\n" + final_aggregator_prompt, model="gpt-4o-mini")
+    # Replace DDGS.chat with Groq API call
+    aggregated_strategy = groq_client.chat.completions.create(
+        model="llama-3.2-90b-text-preview",
+        messages=[
+            {"role": "user", "content": final_aggregator_prompt}
+        ],
+        temperature=0.7,
+        max_tokens=1024
+    ).choices[0].message.content
     
     interpreter.system_message = """
     You have been provided with strategies for the solving process for a math problem. Your task is to solve the problem a single step at a time and if that particular step needs to do some computations write code and execute it and make sure you do one step at a time and if need to compute something write correct code for that current step and execute it and then continue to next step and make sure you do not skip any step and do not provide the final answer until you reach the final step.
     """
     interpreter.auto_run = True
     interpreter.llm.model = "together_ai/meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"
-    
+    interpreter.llm.api_key = TOGETHER_API_KEY
     solution = interpreter.chat(user_prompt + "\n" + aggregated_strategy)
     return solution
 

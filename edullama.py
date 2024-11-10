@@ -6,7 +6,6 @@ from PIL import Image
 import os
 from tempfile import NamedTemporaryFile
 import google.generativeai as genai
-from duckduckgo_search import DDGS
 from groq import Groq
 from elevenlabs.client import ElevenLabs
 from together import Together
@@ -29,8 +28,7 @@ reference_models = [
     "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
     "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
     "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
-    "gpt-4o-mini",
-    "claude-3-haiku"
+    
 ]
 
 # Helper functions
@@ -125,11 +123,7 @@ def run_together_llm(model: str, prompt: str) -> str:
     )
     return f"{model}: {response.choices[0].message.content}"
 
-def run_ddg_chat(model: str, prompt: str) -> str:
-    """Runs the prompt through DuckDuckGo chat."""
-    ddgs = DDGS()
-    response = ddgs.chat(prompt, model=model)
-    return f"DuckDuckGo {model}: {response}"
+
 
 def solve_math_problem(user_prompt):
     """Main function to process and solve math problems."""
@@ -141,8 +135,7 @@ def solve_math_problem(user_prompt):
         for model in reference_models:
             if model.startswith("meta-llama"):
                 future = executor.submit(run_together_llm, model, breakdown_prompt)
-            elif model in ["gpt-4o-mini", "claude-3-haiku"]:
-                future = executor.submit(run_ddg_chat, model, breakdown_prompt)
+            
             else:
                 raise ValueError(f"Unknown model type: {model}")
             future_to_model[future] = model

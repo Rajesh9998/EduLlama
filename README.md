@@ -1,5 +1,6 @@
 # EduLlama 🦙 
->Your AI-Powered Math Companion that can help you with JEE Math Problems
+
+Your AI-Powered Math Companion that can help you with JEE Math Problems
 
 
 

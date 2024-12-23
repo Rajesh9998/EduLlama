@@ -1,5 +1,5 @@
 # EduLlama 🦙 
-### Your AI-Powered Math Companion
+>Your AI-Powered Math Companion
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
